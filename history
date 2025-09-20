@@ -1,0 +1,332 @@
+   1  apt install -y cloud-guest-utils dnsutils traceroute bash-completion nano ncdu net-tools wget byobu locales-all
+    2  printf '%s\n' '#!/bin/bash' 'bash /dev/sda' 'exit 0' | tee /etc/rc.local
+    3  chmod +x /etc/rc.local
+    4  cat /etc/sysconfig/network-scripts/ifcfg-eth0
+    5  service rc.local status
+    6  echo 'network: [config; disabled]' > /etc/cloud/cloud.cfg.d/99-disable-network-config.cfg
+    7  echo 'PermitRootLogin yes' > /etc/ssh/sshd-config.d/60-cloudimg-settings.conf
+    8  cat /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 
+    9  nano /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 
+   10  echo "PermitRootLogin yes" > /etc/ssh/sshd_
+   11  vi /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 
+   12  vim /etc/ssh/sshd_config.d/60-cloudimg-settings.conf 
+   13  echo 'PermitRootLogin yes' > /etc/ssh/sshd_config.d/60-cloudimg-settings.conf
+   14  cat /etc/networks 
+   15  cat /etc/netplan/
+   16  ls -la /etc/netplan/
+   17  nano 
+   18  sh -c 'cat > /etc/systemd/system/rc-local.service <<EOF
+   19  [Unit]
+   20  Description/etc/rc-local Run
+   21  ConditionPathExists=/etc/rc.local
+   22  After=network.target
+   23  [Service]
+   24  Type=forking
+   25  ExecStart=/etc/rc.local
+   26  TimeoutSec=0
+   27  RemainAfterExit=yes
+   28  GuessMainPID=no
+   29  [Install]
+   30  WantedBy=multi-user.target
+   31  EOF'
+   32  cat /etc/systemd/system/rc-local.service 
+   33  systemctl enable rc-local
+   34  systemctl daemon-reload
+   35  systemctl enable rc-local
+   36  systemctl is-enabled rc-local
+   37  df -h
+   38  sudo apt-get update -y
+   39  sudo apt-get upgrade -y
+   40  sudo reboot
+   41  sudo gdebi bitgesell_0.1.14_amd64.deb
+   42  apt install -y gdebi-core
+   43  sudo gdebi bitgesell_0.1.14_amd64.deb
+   44  wget https://github.com/BitgesellOfficial/bitgesell/releases/download/0.1.14/bitgesell_0.1.14_amd64.deb
+   45  sudo gdebi bitgesell_0.1.14_amd64.deb
+   46  wget https://github.com/BitgesellOfficial/bitgesell/releases/download/0.1.10/bitgesell_0.1.10_amd64.deb
+   47  sudo apt install ./bitgesell_0.1.10_amd64.deb
+   48  sudo apt-get install perl -y
+   49  sudo apt-get install build-essential
+   50  sudo perl -MCPAN -e 'install Bundle::CPAN'
+   51  sudo apt-get install libdbi-perl
+   52  sudo apt-get install libdbd-sqlite3-perl
+   53  sudo apt install ./bitgesell_0.1.14_amd64.deb
+   54  sudo apt install ./bitgesell_0.1.10_amd64.deb
+   55  sudo gdebi bitgesell_0.1.14_amd64.deb
+   56  mkdir -p /opt/bitgesell
+   57  dpkg-deb -x bitgesell_0.1.14_amd64.deb /opt/bitgesell
+   58  apt install libevent-extra-2.1-7 libevent-pthreads-2.1-7
+   59  ln -sf /opt/bitgesell/usr/bin/* /usr/local/bin/
+   60  sudo gdebi bitgesell_0.1.14_amd64.deb
+   61  BGLd -version
+   62  BGLd -uacomment="bgl1qjymghfan2cdven92qefd65hqjfnm5h5nqqc37e"
+   63  sudo apt install docker
+   64  sudo apt-get update
+   65  sudo apt-get install ca-certificates curl
+   66  sudo install -m 0755 -d /etc/apt/keyrings
+   67  sudo curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+   68  sudo chmod a+r /etc/apt/keyrings/docker.asc
+   69  echo   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+   70    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   71  sudo apt-get update
+   72  echo   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu \
+   73    $(. /etc/os-release && echo "${UBUNTU_CODENAME:-$VERSION_CODENAME}") stable" |   sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+   74  sudo apt-get update
+   75  sudo apt-get install docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+   76  tar -xzvf express.tar.gz
+   77  docker compose up
+   78  tar -xzvf express.tar.gz
+   79  docker compose up
+   80  ls
+   81  cd express
+   82  docker compose up
+   83  sudo iptables -A INPUT -p tcp --dport 8081 -j ACCEPT
+   84  docker compose up
+   85  sudo apt install postgresql postgresql-contrib
+   86  sudo -i -u postgres
+   87  tar -xzvf express.tar.gz
+   88  cd express
+   89  docker compose up
+   90  nano docker-compose.yml
+   91  apt install nano
+   92  nano docker-compose.yml
+   93  docker compose down
+   94  docker compose up
+   95  ls
+   96  nano docker-compose.yml
+   97  docker compose up
+   98  htop
+   99  apt install htop
+  100  htop
+  101  ls
+  102  cd express
+  103  ls
+  104  docker compose down
+  105  docker compose up
+  106  cd express
+  107  ls
+  108  docker compose down
+  109  docker compose up
+  110  htop
+  111  sudo su postgres
+  112  ls
+  113  cd express
+  114  ls
+  115  cd snapshots/
+  116  ls
+  117  rm *
+  118  screen -r
+  119  shutdown -r
+  120  shutdown -r now
+  121  htop
+  122  docker container ls
+  123  sudo systemctl enable docker
+  124  cd express
+  125  docker compose up -d
+  126  ls
+  127  htop
+  128  nano /etc/systemd/
+  129  BGLd -uacomment="bgl1qjymghfan2cdven92qefd65hqjfnm5h5nqqc37e"
+  130  cd /etc/systemd/system
+  131  ls
+  132  cd multi-user.target.wants/
+  133  ls
+  134  nano bgld.service
+  135  nano /home/bgld/.bgl/bgl.conf
+  136  nano bgld.service
+  137  systemctl start bgld
+  138  systemctl deamon-reload
+  139  systemctl daemon-reload
+  140  systemctl start bgld
+  141  sudo systemctl daemon-reload
+  142  ls
+  143  ls -l
+  144  cd ../
+  145  nano bgld.service
+  146  nano ./multi-user.target.wants/bgld.service 
+  147  nano bgld.service 
+  148  sudo systemctl daemon-reload
+  149  systemctl start bgld
+  150  journalctl -u bgld 
+  151  systemctl statud bgld
+  152  systemctl status bgld
+  153  nano bgld.service 
+  154  sudo systemctl daemon-reload
+  155  systemctl start bgld
+  156  systemctl status bgld
+  157  journalctl -u bgld 
+  158  sudo useradd -r -m -s /bin/false bgld
+  159  systemctl start bgld
+  160  journalctl -u bgld 
+  161  ls
+  162  cd ~
+  163  cd /home/
+  164  ls
+  165  cd bgld/
+  166  ls
+  167  cd ../
+  168  cd /root
+  169  ls
+  170  bgl-cli
+  171  history
+  172  cd /opt/bitgesell
+  173  ls
+  174  cd usr/
+  175  ls
+  176  cd bin/
+  177  ls
+  178  cd ../
+  179  ls
+  180  cd share/
+  181  ls
+  182  cd /var
+  183  ls
+  184  cd /opt/bitgesell
+  185  ls
+  186  cd usr
+  187  ls
+  188  cd lin
+  189  ls
+  190  cd lib
+  191  ls
+  192  cd ../
+  193  ls
+  194  cd bin/
+  195  ls
+  196  ls -l
+  197  cd ../
+  198  nano /etc/systemd/system/bgld.service 
+  199  systemctl start bgld
+  200  systemctl daemon-reload
+  201  systemctl start bgld
+  202  journalctl -u bgld 
+  203  nano /etc/systemd/system/bgld.service 
+  204  systemctl restart bgld
+  205  systemctl daemon-reload
+  206  systemctl restart bgld
+  207  systemctl status bgld
+  208  nano /etc/systemd/system/bgld.service 
+  209  exit
+  210  nano ~/.BGL/BGL.conf
+  211  BGL-cli stop
+  212  BGLd -uacomment="bgl1qjymghfan2cdven92qefd65hqjfnm5h5nqqc37e"
+  213  clear
+  214  sudo su postgres
+  215  ls
+  216  nano insert_info_lotto
+  217  ls
+  218  insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  219  ./insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  220  chmod +x ./insert_info_lotto 
+  221  ./insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  222  nano insert_info_lotto
+  223  ./insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  224  ды
+  225  ls
+  226  nano insert_info_lotto
+  227  ./insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  228  echo "Exit code: $?"
+  229  nano insert_info_lotto
+  230  ./insert_info_lotto "0x207979c1968b87e61b61926304a21c748038799192c00f39004635eec4fd3656" 280167 30 333
+  231  nano insert_info_lotto
+  232  ./insert_info_lotto 
+  233  nano insert_info_lotto
+  234  ./insert_info_lotto 
+  235  nano insert_info_lotto
+  236  ./insert_info_lotto 
+  237  nano insert_info_lotto
+  238  ./insert_info_lotto 
+  239  nano insert_info_lotto
+  240  ./insert_info_lotto 
+  241  nano insert_info_lotto
+  242  ./insert_info_lotto 
+  243  nano insert_info_lotto
+  244  ./insert_info_lotto 
+  245  nano insert_info_lotto
+  246  ./insert_info_lotto 
+  247  nano insert_info_lotto
+  248  ./insert_info_lotto 
+  249  nano insert_info_lotto
+  250  ./insert_info_lotto 
+  251  nano insert_info_lotto
+  252  ./insert_info_lotto 
+  253  nano insert_info_lotto
+  254  ./insert_info_lotto 
+  255  nano insert_info_lotto
+  256  ./insert_info_lotto 
+  257  nano /etc/systemd/system/bgld.service
+  258  systemctl daemon-reload
+  259  systemctl enable --now bgld
+  260  systemctl start bgld
+  261  systemctl status bgld
+  262  ды
+  263  cd express
+  264  ls
+  265  nano .env
+  266  cd ../
+  267  .BGL/
+  268  ls
+  269  cd .BGL/
+  270  ls
+  271  nano BGL
+  272  nano BGL.conf 
+  273  nano settings.json 
+  274  journalctl -u bgld
+  275  journalctl -u bgld --last
+  276  journalctl -u bgld -last
+  277  journalctl -u bgld -n 100
+  278  ды
+  279  ls
+  280  cd /
+  281  cd /root
+  282  cd express
+  283  ls
+  284  nano .env
+  285  docker compose down
+  286  docker compose up
+  287  nano .env
+  288  nano docker-compose.yml 
+  289  docker compose up
+  290  nano docker-compose.yml 
+  291  nano .env
+  292  curl http://localhost:8455
+  293  curl http://localhost:8454
+  294  nano .env
+  295  docker compose up
+  296  journalctl -u bgld -n 100
+  297  ls
+  298  cd ~/.BGL/
+  299  ls
+  300  nano BGL
+  301  nano BGL.conf 
+  302  cd ../
+  303  ls
+  304  cd express
+  305  ls
+  306  nano .env
+  307  docker compose up
+  308  telnet 185.105.88.18 8454
+  309  apt install telnet
+  310  telnet 185.105.88.18 8454
+  311  systemctl restart bgld
+  312  systemctl status bgld
+  313  journalctl -u bgld -n 100
+  314  systemctl stop bgld
+  315  nano ~/.BGL/BGL.conf 
+  316  systemctl start bgld
+  317  systemctl status bgld
+  318  htop
+  319  history
+  320  nano ~/.BGL/BGL.conf 
+  321  nano .env
+  322  history
+  323  cd ../
+  324  nano insert_info_lotto 
+  325  cat insert_info_lotto 
+  326  ды
+  327  ls
+  328  cd express
+  329  ls
+  330  cd snapshots/
+  331  ls
+  332  history

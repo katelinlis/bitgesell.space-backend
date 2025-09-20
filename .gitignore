@@ -1,0 +1,7 @@
+node_modules
+TT.md
+*.docx
+/snapshots
+*.gz
+.BGL.conf
+.env

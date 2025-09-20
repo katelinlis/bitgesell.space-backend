@@ -1,0 +1,21 @@
+
+services:
+  app:
+    volumes:
+      - .:/app
+      - /app/node_modules
+    build: .
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      DATABASE_URL: postgresql://app2:app2@host.docker.internal:5432/opensea_lotto2
+      PORT: 8081
+    ports:
+      - "0.0.0.0:8081:8081"
+      - "5555:5555"
+    env_file:
+      - .env
+    command: sh -c "npm ci && npx prisma db push && npm run dev"
+volumes:
+  db_data:
+
+

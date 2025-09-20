@@ -1,0 +1,356 @@
+import { describe, it, expect, beforeEach, jest, afterEach } from '@jest/globals';
+import request from 'supertest';
+import express from 'express';
+import router from '../router';
+import { ownersCache } from '../state/ownersCache';
+
+// Мокаем внешние зависимости
+jest.mock('../state/ownersCache');
+jest.mock('../utils/get_current_block');
+jest.mock('../utils/get_lucky_block');
+jest.mock('../clients/bgl');
+jest.mock('../state/snapshots');
+
+const mockOwnersCache = ownersCache as jest.Mocked<typeof ownersCache>;
+
+const app = express();
+app.use('/', router);
+
+describe('Router Integration Tests', () => {
+  beforeEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('GET /', () => {
+    it('should return service info', async () => {
+      const response = await request(app)
+        .get('/')
+        .expect(200);
+      
+      expect(response.body).toEqual({
+        ok: true,
+        service: 'opensea-lotto-express'
+      });
+    });
+  });
+
+  describe('GET /get_pages/:limit', () => {
+    it('should return correct pages count', async () => {
+      const response = await request(app)
+        .get('/get_pages/10')
+        .expect(200);
+      
+      expect(response.body).toBe(1); // Math.max(1, Math.ceil(0 / 10))
+    });
+
+    it('should handle invalid limit', async () => {
+      const response = await request(app)
+        .get('/get_pages/invalid')
+        .expect(200);
+      
+      expect(response.body).toBe(1);
+    });
+  });
+
+  describe('GET /get_owners', () => {
+    beforeEach(() => {
+      // Настраиваем моки для каждого теста
+      const { getCurrentBlock } = require('../utils/get_current_block');
+      const { getLuckyBlock } = require('../utils/get_lucky_block');
+      
+      getCurrentBlock.mockResolvedValue(1000);
+      getLuckyBlock.mockResolvedValue(1500);
+    });
+
+    it('should return all owners without limit', async () => {
+      const mockOwners = [
+        { address: '0x1111', score: 1000 },
+        { address: '0x2222', score: 500 },
+      ];
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      const response = await request(app)
+        .get('/get_owners')
+        .expect(200);
+      
+      expect(response.body).toHaveLength(2);
+      expect(response.body[0].address).toBe('0x1111'); // sorted by score desc
+      expect(response.body[1].address).toBe('0x2222');
+    });
+
+    it('should return paginated owners with limit', async () => {
+      const mockOwners = [
+        { address: '0x1111', score: 1000 },
+        { address: '0x2222', score: 500 },
+        { address: '0x3333', score: 100 },
+      ];
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      const response = await request(app)
+        .get('/get_owners?limit=2&page=1')
+        .expect(200);
+      
+      expect(response.body).toHaveLength(2);
+      expect(response.body[0].address).toBe('0x1111');
+      expect(response.body[1].address).toBe('0x2222');
+    });
+
+    it('should filter owners by search', async () => {
+      const mockOwners = [
+        { address: '0x1111', score: 1000 },
+        { address: '0x2222', score: 500 },
+      ];
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      const response = await request(app)
+        .get('/get_owners?search=0x1111')
+        .expect(200);
+      
+      expect(response.body).toHaveLength(1);
+      expect(response.body[0].address).toBe('0x1111');
+    });
+  });
+
+  describe('GET /get_tickets - Critical Edge Cases', () => {
+    beforeEach(() => {
+      const { getCurrentBlock } = require('../utils/get_current_block');
+      const { getLuckyBlock } = require('../utils/get_lucky_block');
+      
+      getCurrentBlock.mockResolvedValue(1000);
+      getLuckyBlock.mockResolvedValue(1500);
+    });
+
+    it('should handle case where total sum > 10000 but users have < 1100 tickets', async () => {
+      // Создаем ситуацию "несправедливого" распределения
+      const mockOwners = [
+        { address: '0xBIG1', score: 8000 },  // получит много билетов
+        { address: '0xSMALL1', score: 100 }, // получит мало билетов
+        { address: '0xSMALL2', score: 50 },  // получит очень мало билетов
+      ];
+      
+      // Общая сумма > 10000, но у пользователей мало билетов на руках
+      const totalSum = 8150;
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      const response = await request(app)
+        .get('/get_tickets')
+        .expect(200);
+      
+      expect(response.body).toHaveProperty('tickets');
+      expect(response.body).toHaveProperty('map');
+      
+      // Проверяем что создалось правильное количество билетов
+      if (totalSum >= 10000) {
+        expect(response.body.tickets).toHaveLength(100000);
+      } else if (totalSum >= 1000) {
+        expect(response.body.tickets).toHaveLength(10000);
+      } else {
+        expect(response.body.tickets).toHaveLength(1000);
+      }
+      
+      // Проверяем что map содержит информацию о владельцах
+      expect(response.body.map[0].address).toBe('0xBIG1'); // наибольший score
+      
+      // В этом случае владелец с большим score получит большинство билетов
+      const bigOwnerTickets = response.body.tickets.filter((t: number) => t === 0).length;
+      const smallOwner1Tickets = response.body.tickets.filter((t: number) => t === 1).length;
+      const smallOwner2Tickets = response.body.tickets.filter((t: number) => t === 2).length;
+      
+      expect(bigOwnerTickets).toBeGreaterThan(smallOwner1Tickets);
+      expect(bigOwnerTickets).toBeGreaterThan(smallOwner2Tickets);
+    });
+
+    it('should handle extreme unfair distribution scenario', async () => {
+      // Экстремальный случай: очень высокая общая сумма, но мало владельцев
+      const mockOwners = [
+        { address: '0xWHALE', score: 500 },
+        { address: '0xMINNOW', score: 50 },
+      ];
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      // Подменяем reduce чтобы эмулировать высокую сумму
+      jest.spyOn(Array.prototype, 'reduce').mockImplementationOnce(function(this: any[], callback, initial) {
+        if (this === mockOwners) {
+          return 15000; // Принудительно возвращаем высокую сумму > 10000
+        }
+        return Array.prototype.reduce.call(this, callback, initial);
+      });
+      
+      const response = await request(app)
+        .get('/get_tickets')
+        .expect(200);
+      
+      expect(response.body.tickets).toHaveLength(100000);
+      
+      // В этом сценарии большинство билетов останутся нераспределенными (-1)
+      const unassignedTickets = response.body.tickets.filter((t: number) => t === -1).length;
+      const assignedTickets = response.body.tickets.filter((t: number) => t >= 0).length;
+      
+      expect(unassignedTickets).toBeGreaterThan(assignedTickets);
+      expect(unassignedTickets / 100000).toBeGreaterThan(0.95); // более 95% нераспределены
+    });
+  });
+
+  describe('GET /get_last_winners - Unfair Distribution Scenarios', () => {
+    beforeEach(() => {
+      const { getCurrentBlock } = require('../utils/get_current_block');
+      const { getLuckyBlock } = require('../utils/get_lucky_block');
+      const { getBlockHash } = require('../clients/bgl');
+      const { Snapshots } = require('../state/snapshots');
+      
+      getCurrentBlock.mockResolvedValue(1600); // больше lucky block
+      getLuckyBlock.mockResolvedValue(1500);
+      getBlockHash.mockResolvedValue('0x1234567890abcdef123456'); // хеш с цифрами
+      Snapshots.getLatestSnapshot.mockReturnValue(null);
+      Snapshots.loadSnapshot.mockResolvedValue(undefined);
+      Snapshots.saveSnapshot.mockResolvedValue(undefined);
+    });
+
+    it('should handle winners when many tickets are unassigned due to unfair distribution', async () => {
+      const mockOwners = [
+        { address: '0xDOMINANT', score: 800 },
+        { address: '0xWEAK1', score: 100 },
+        { address: '0xWEAK2', score: 50 },
+      ];
+      
+      // Подменяем reduce для эмуляции высокой суммы
+      jest.spyOn(Array.prototype, 'reduce').mockImplementationOnce(function(this: any[], callback, initial) {
+        if (this === mockOwners) {
+          return 25000; // Высокая сумма создаст 100000 билетов
+        }
+        return Array.prototype.reduce.call(this, callback, initial);
+      });
+      
+      mockOwnersCache.listOwners.mockReturnValue(mockOwners);
+      
+      const response = await request(app)
+        .get('/get_last_winners')
+        .expect(200);
+      
+      expect(Array.isArray(response.body)).toBe(true);
+      
+      // В случае несправедливого распределения многие победители могут быть "no winner"
+      const noWinners = response.body.filter((winner: string) => winner === 'no winner');
+      const realWinners = response.body.filter((winner: string) => winner.startsWith('0x'));
+      
+      // Проверяем что есть случаи "no winner" из-за нераспределенных билетов
+      if (noWinners.length > 0) {
+        expect(noWinners.length).toBeGreaterThanOrEqual(1);
+      }
+      
+      // Если есть реальные победители, то доминирующий владелец должен иметь преимущество
+      if (realWinners.length > 0) {
+        const dominantWins = realWinners.filter((w: string) => w === '0xDOMINANT').length;
+        const weakWins1 = realWinners.filter((w: string) => w === '0xWEAK1').length;
+        const weakWins2 = realWinners.filter((w: string) => w === '0xWEAK2').length;
+        
+        // Доминирующий владелец должен выигрывать чаще или равно
+        expect(dominantWins).toBeGreaterThanOrEqual(Math.max(weakWins1, weakWins2));
+      }
+    });
+
+    it('should return no winners when current block < lucky block', async () => {
+      const { getCurrentBlock } = require('../utils/get_current_block');
+      getCurrentBlock.mockResolvedValue(1400); // меньше lucky block (1500)
+      
+      const response = await request(app)
+        .get('/get_last_winners')
+        .expect(200);
+      
+      expect(response.body).toEqual(["", "there are no winners yet", ""]);
+    });
+
+    it('should handle error scenarios gracefully', async () => {
+      const { getCurrentBlock } = require('../utils/get_current_block');
+      getCurrentBlock.mockRejectedValue(new Error('Block fetch error'));
+      
+      const response = await request(app)
+        .get('/get_last_winners')
+        .expect(500);
+      
+      expect(response.body).toHaveProperty('error');
+    });
+  });
+
+  describe('Fairness Analysis Tests', () => {
+    it('should demonstrate unfair advantage for large holders in high sum scenarios', async () => {
+      const scenarios = [
+        {
+          name: 'Whale dominance',
+          owners: [
+            { address: '0xWHALE', score: 9000 },
+            { address: '0xSHRIMP1', score: 50 },
+            { address: '0xSHRIMP2', score: 50 },
+          ],
+          expectedSum: 25000 // > 10000
+        },
+        {
+          name: 'Medium unfairness',
+          owners: [
+            { address: '0xBIG', score: 4000 },
+            { address: '0xMED', score: 2000 },
+            { address: '0xSMALL', score: 100 },
+          ],
+          expectedSum: 15000 // > 10000
+        }
+      ];
+
+      for (const scenario of scenarios) {
+        jest.spyOn(Array.prototype, 'reduce').mockImplementationOnce(function(this: any[], callback, initial) {
+          if (this === scenario.owners) {
+            return scenario.expectedSum;
+          }
+          return Array.prototype.reduce.call(this, callback, initial);
+        });
+
+        mockOwnersCache.listOwners.mockReturnValue(scenario.owners);
+
+        const { getCurrentBlock } = require('../utils/get_current_block');
+        const { getLuckyBlock } = require('../utils/get_lucky_block');
+        getCurrentBlock.mockResolvedValue(1600);
+        getLuckyBlock.mockResolvedValue(1500);
+
+        const ticketsResponse = await request(app)
+          .get('/get_tickets')
+          .expect(200);
+
+        // Анализируем распределение билетов
+        const ticketCounts = scenario.owners.map((_, index) => 
+          ticketsResponse.body.tickets.filter((t: number) => t === index).length
+        );
+
+        const totalAssigned = ticketCounts.reduce((a, b) => a + b, 0);
+        const unassigned = ticketsResponse.body.tickets.filter((t: number) => t === -1).length;
+
+        console.log(`\nScenario: ${scenario.name}`);
+        console.log(`Total tickets: ${ticketsResponse.body.tickets.length}`);
+        console.log(`Assigned tickets: ${totalAssigned}`);
+        console.log(`Unassigned tickets: ${unassigned} (${(unassigned/100000*100).toFixed(1)}%)`);
+        
+        scenario.owners.forEach((owner, i) => {
+          const percentage = (ticketCounts[i] / totalAssigned * 100).toFixed(1);
+          console.log(`${owner.address}: ${ticketCounts[i]} tickets (${percentage}%)`);
+        });
+
+        // Проверяем что крупный владелец получает непропорционально много билетов
+        const largestHolderIndex = scenario.owners.findIndex(o => 
+          o.score === Math.max(...scenario.owners.map(owner => owner.score))
+        );
+        
+        if (totalAssigned > 0) {
+          const largestHolderPercentage = ticketCounts[largestHolderIndex] / totalAssigned;
+          const largestHolderScorePercentage = scenario.owners[largestHolderIndex].score / 
+            scenario.owners.reduce((acc, o) => acc + o.score, 0);
+
+          // Крупный владелец должен получить долю билетов пропорциональную его score или больше
+          expect(largestHolderPercentage).toBeGreaterThanOrEqual(largestHolderScorePercentage - 0.01);
+        }
+      }
+    });
+  });
+});

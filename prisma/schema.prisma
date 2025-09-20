@@ -1,0 +1,33 @@
+// Prisma schema for minimal parity with Rust Diesel schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model tokens {
+  index   Int     @id
+  id      String?
+  count   Int?
+  bracket Int?
+  level   String?
+}
+
+model info {
+  hash String @id
+  wbgl Int?
+}
+
+model info_lotto {
+  last_payment String @id
+  wining_block Int?
+  round        Int?
+  wbgl         Int?
+}
+
+
+
